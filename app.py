@@ -128,5 +128,44 @@ def get_student(student_id):
     else:
         conn.close()
         return flask.jsonify({"success": False, "message": "Student ID not found"}), 404
+@app.route('/api/issuer/upload', methods=['POST'])
+def upload_credential():
+    # 1. Grab the JSON data sent by the Authority Portal
+    data = flask.request.json
+    
+    student_id = data.get('student_id')
+    issuer_name = data.get('issuer_name')
+    credential_name = data.get('credential_name')
+    credential_value = data.get('credential_value')
+
+    # 2. Validate that they didn't leave any fields blank
+    if not all([student_id, issuer_name, credential_name, credential_value]):
+        return flask.jsonify({"success": False, "message": "Missing required fields"}), 400
+
+    try:
+        # 3. Connect to the vault and insert the new ledger row
+        conn = get_db_connection()
+        
+        # First, check if the student actually exists in the core registry
+        student = conn.execute('SELECT * FROM students WHERE student_id = ?', (student_id,)).fetchone()
+        
+        if not student:
+            conn.close()
+            return flask.jsonify({"success": False, "message": "Student APAAR ID not found in core registry."}), 404
+
+        # If student exists, append the new credential to their ledger
+        conn.execute(
+            'INSERT INTO credentials_ledger (student_id, issuer_name, credential_name, credential_value) VALUES (?, ?, ?, ?)',
+            (student_id, issuer_name, credential_name, credential_value)
+        )
+        
+        conn.commit()
+        conn.close()
+        
+        print(f"✅ [LEDGER UPDATE] {issuer_name} issued '{credential_name}' to {student_id}")
+        return flask.jsonify({"success": True, "message": "Credential successfully published to ledger."})
+        
+    except Exception as e:
+        return flask.jsonify({"success": False, "message": f"Server Error: {str(e)}"}), 500
 if __name__ == '__main__':
     app.run(host='0.0.0.0', debug=True, port=5000)
