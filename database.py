@@ -3,9 +3,11 @@ import sqlite3
 conn = sqlite3.connect("students.db")
 cursor = conn.cursor()
 
+# 1. Clear old tables to start fresh
+cursor.execute('DROP TABLE IF EXISTS credentials_ledger')
 cursor.execute('DROP TABLE IF EXISTS students')
 
-# Added email_id TEXT at the end
+# 2. Table 1: Core Identity (Agnostic to exams)
 cursor.execute('''
     CREATE TABLE students (
         student_id TEXT PRIMARY KEY,
@@ -15,30 +17,41 @@ cursor.execute('''
         mother_name TEXT,
         aadhaar_number TEXT,
         category TEXT,
-        board_name TEXT,
-        board_score REAL,
-        jee_adv_rank INTEGER,
         phone_number TEXT,
         email_id TEXT,
-        profile_pic TEXT
+        profile_pic TEXT 
     )
 ''')
 
-# Added dummy emails as the 12th item in each tuple
-sample_students = [
-    ("APAAR1001", "Yashas H N", "2008-02-29", "Nagaraju H G", "Pushpa H P", "XXXX-XXXX-1001", "General", "Karnataka 2nd PUC", 97.67, 2611, "6362848869", "yashashn45@gmail.com", "/static/APAAR1001.jpg"),
-    ("APAAR1002", "Diya Rao", "2007-11-20", "Sanjay Rao", "Meena Rao", "XXXX-XXXX-1002", "OBC-NCL", "CBSE Class 12", 94.20, 1500, "9876543210", "diya@example.com", "/static/APAAR1002.jpg"),
-    ("APAAR1011", "Kiran Kumar", "2008-04-12", "Rajesh拾 Kumar", "Lakshmi Kumar", "XXXX-XXXX-1011", "OBC", "CBSE", 94.50, 4521, "9876543210", "kiran@example.com", "/static/APAAR1011.jpg"),
-    ("APAAR1012", "Sneha Sharma", "2007-09-25", "Amit Sharma", "Priya Sharma", "XXXX-XXXX-1012", "General", "ICSE", 98.20, 1205, "9876543210", "sneha@example.com", "/static/APAAR1012.jpg"),
-    ("APAAR1013", "Arjun Reddy", "2008-01-14", "Prakash Reddy", "Kavitha Reddy", "XXXX-XXXX-1013", "General", "Telangana State Board", 96.80, 3110, "9876543210", "arjun@example.com", "/static/APAAR1013.jpg"),
-    ("APAAR1014", "Pooja Patil", "2007-11-03", "Sunil Patil", "Anita Patil", "XXXX-XXXX-1014", "SC", "Maharashtra HSC", 89.40, 15302, "9876543210", "pooja@example.com", "/static/APAAR1014.jpg"),
-    ("APAAR1015", "Rohan Gupta", "2008-06-22", "Vijay Gupta", "Meena Gupta", "XXXX-XXXX-1015", "General", "CBSE", 92.10, 8433, "9876543210", "rohan@example.com", "/static/APAAR1015.jpg")
-]
+# 3. Table 2: The Dynamic Credential Ledger
+cursor.execute('''
+    CREATE TABLE credentials_ledger (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        student_id TEXT,
+        issuer_name TEXT,
+        credential_name TEXT,
+        credential_value TEXT,
+        FOREIGN KEY (student_id) REFERENCES students(student_id)
+    )
+''')
 
-# We now use 12 question marks for the 12 columns
-cursor.executemany("INSERT INTO students VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", sample_students)
+# 4. Insert Core Identity Data
+sample_students = [
+    ("APAAR1001", "Yashas H N", "2008-02-29", "Nagaraju H G", "Pushpa H P", "XXXX-XXXX-1001", "General", "6362848869", "yashashn45@gmail.com", "/static/student1.jpg"),
+]
+cursor.executemany("INSERT INTO students VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", sample_students)
+
+# 5. Insert Dynamic Credentials for APAAR1001
+sample_credentials = [
+    # (student_id, issuer_name, credential_name, credential_value)
+    ("APAAR1001", "CBSE", "10th Board Score", "98.2%"),
+    ("APAAR1001", "Karnataka Dept of Pre-University Education", "12th Board Score", "97.67%"),
+    ("APAAR1001", "National Testing Agency (NTA)", "JEE Mains Percentile", "99.559"),
+    ("APAAR1001", "IIT Joint Admission Board", "JEE Advanced Rank", "2611")
+]
+cursor.executemany("INSERT INTO credentials_ledger (student_id, issuer_name, credential_name, credential_value) VALUES (?, ?, ?, ?)", sample_credentials)
 
 conn.commit()
 conn.close()
 
-print("Vault rebuilt with Phone Numbers and Email IDs!")
+print("Enterprise Vault rebuilt with Dynamic Ledger!")
