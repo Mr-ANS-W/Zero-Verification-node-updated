@@ -495,73 +495,47 @@
                     resultCard.style.display = "block";
                     showToast("Cryptographic PIN verified", "success");
 
-                    // resultCard.innerHTML = `
-                    //     <h3 style="color: #059669; display: flex; align-items: center; gap: 8px; margin-bottom: 5px;">
-                    //         <svg width="20" height="20" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
-                    //         Identity & Records Verified
-                    //     </h3>
-                    //     <p style="color: #64748b; font-size: 14px; margin-bottom: 15px;">Secure transfer authorized by student token.</p>
-                        
-                    //     <div class="data-grid">
-                    //         <div class="data-item full-width">
-                    //             <div class="data-label">Full Legal Name</div>
-                    //             <div class="data-value">${json.data.full_name}</div>
-                    //         </div>
-                    //         <div class="data-item">
-                    //             <div class="data-label">Date of Birth</div>
-                    //             <div class="data-value">${json.data.dob}</div>
-                    //         </div>
-                    //         <div class="data-item">
-                    //             <div class="data-label">Masked Aadhaar</div>
-                    //             <div class="data-value">${json.data.aadhaar_number}</div>
-                    //         </div>
-                    //         <div class="data-item">
-                    //             <div class="data-label">Board Score (${json.data.board_name})</div>
-                    //             <div class="data-value" style="color: #3a71c9;">${json.data.board_score}%</div>
-                    //         </div>
-                    //         <div class="data-item">
-                    //             <div class="data-label">JEE Advanced Rank</div>
-                    //             <div class="data-value" style="color: #3a71c9;">${json.data.jee_adv_rank}</div>
-                    //         </div>
-                    //     </div>
-                    // `;
+                    // 1. DYNAMICALLY LOOP THROUGH THE DATABASE SCORES
+                    let credentialsHTML = "";
+                    if (json.data.credentials && json.data.credentials.length > 0) {
+                        credentialsHTML = json.data.credentials.map(cred => `
+                            <div class="data-item">
+                                <div class="data-label">${cred.credential_name}</div>
+                                <div class="data-value" style="color: #3a71c9;">${cred.credential_value}</div>
+                                <div style="font-size: 10px; color: #94a3b8; margin-top: 4px; font-weight: 500;">
+                                    Issued by: ${cred.issuer_name}
+                                </div>
+                            </div>
+                        `).join("");
+                    } else {
+                        credentialsHTML = `<div class="data-item full-width" style="text-align: center; color: #64748b;">No academic records found in ledger.</div>`;
+                    }
+
+                    // 2. DRAW THE SCREEN
                     resultCard.innerHTML = `
-    <h3 style="color: #059669; display: flex; align-items: center; gap: 8px; margin-bottom: 15px;">
-        <svg width="20" height="20" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
-        Identity & Records Verified
-    </h3>
-    
-    <!-- NEW: Profile Header Section -->
-    <div class="profile-header">
-        <img src="${json.data.profile_pic}" class="profile-img" alt="Student Photo">
-        <div class="profile-title">
-            <h4>${json.data.full_name}</h4>
-            <p>DOB: ${json.data.dob} • ${json.data.category}</p>
-        </div>
-    </div>
-    
-    <!-- UPDATED: Data Grid (Removed Name and DOB since they are in the header) -->
-    <div class="data-grid">
-        <div class="data-item full-width">
-            <div class="data-label">Masked Aadhaar</div>
-            <div class="data-value">${json.data.aadhaar_number}</div>
-        </div>
-        <div class="data-item">
-            <div class="data-label">Board Score (${json.data.board_name})</div>
-            <div class="data-value" style="color: #3a71c9;">${json.data.board_score}%</div>
-        </div>
-        <div class="data-item">
-            <div class="data-label">JEE Advanced Rank</div>
-            <div class="data-value" style="color: #3a71c9;">${json.data.jee_adv_rank}</div>
-        </div>
-        <div class="data-item full-width">
-            <div class="data-label">Parents</div>
-            <div class="data-value" style="font-size: 14px;">${json.data.father_name} & ${json.data.mother_name}</div>
-        </div>
-    </div>
-`;
-                } else {
-                    showToast(json.message);
+                        <h3 style="color: #059669; display: flex; align-items: center; gap: 8px; margin-bottom: 15px;">
+                            <svg width="20" height="20" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
+                            Identity & Records Verified
+                        </h3>
+                        
+                        <div class="profile-header">
+                            <img src="${json.data.profile_pic}" class="profile-img" alt="Student Photo">
+                            <div class="profile-title">
+                                <h4>${json.data.full_name}</h4>
+                                <p>DOB: ${json.data.dob}<br>${json.data.category} Category</p>
+                            </div>
+                        </div>
+                        
+                        <div class="data-grid">
+                            <div class="data-item full-width">
+                                <div class="data-label">Masked Aadhaar</div>
+                                <div class="data-value">${json.data.aadhaar_number}</div>
+                            </div>
+                            
+                            <!-- This automatically pastes however many scores the student has! -->
+                            ${credentialsHTML}
+                        </div>
+                    `;
                 }
             } catch (error) {
                 showToast("Server offline. Is Flask running?");
@@ -596,78 +570,53 @@
                 const response = await fetch(`http://127.0.0.1:5000/api/verify/${currentStudentId}?otp=${otp}`);
                 const json = await response.json();
 
-                if (json.success) {
-                    document.getElementById("otp_section").style.display = "none";
+               if (json.success) {
+                    document.getElementById("mode_pin").style.display = "none";
+                    document.querySelector(".mode-toggle").style.display = "none";
                     resultCard.style.display = "block";
-                    showToast("Cryptographic consent verified", "success");
+                    showToast("Cryptographic PIN verified", "success");
 
-                    // resultCard.innerHTML = `
-                    //     <h3 style="color: #059669; display: flex; align-items: center; gap: 8px; margin-bottom: 5px;">
-                    //         <svg width="20" height="20" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
-                    //         Identity & Records Verified
-                    //     </h3>
-                    //     <p style="color: #64748b; font-size: 14px; margin-bottom: 15px;">Secure transfer authorized by student.</p>
-                        
-                    //     <div class="data-grid">
-                    //         <div class="data-item full-width">
-                    //             <div class="data-label">Full Legal Name</div>
-                    //             <div class="data-value">${json.data.full_name}</div>
-                    //         </div>
-                    //         <div class="data-item">
-                    //             <div class="data-label">Date of Birth</div>
-                    //             <div class="data-value">${json.data.dob}</div>
-                    //         </div>
-                    //         <div class="data-item">
-                    //             <div class="data-label">Masked Aadhaar</div>
-                    //             <div class="data-value">${json.data.aadhaar_number}</div>
-                    //         </div>
-                    //         <div class="data-item">
-                    //             <div class="data-label">Board Score (${json.data.board_name})</div>
-                    //             <div class="data-value" style="color: #3a71c9;">${json.data.board_score}%</div>
-                    //         </div>
-                    //         <div class="data-item">
-                    //             <div class="data-label">JEE Advanced Rank</div>
-                    //             <div class="data-value" style="color: #3a71c9;">${json.data.jee_adv_rank}</div>
-                    //         </div>
-                    //     </div>
-                    // `;
+                    // 1. DYNAMICALLY LOOP THROUGH THE DATABASE SCORES
+                    let credentialsHTML = "";
+                    if (json.data.credentials && json.data.credentials.length > 0) {
+                        credentialsHTML = json.data.credentials.map(cred => `
+                            <div class="data-item">
+                                <div class="data-label">${cred.credential_name}</div>
+                                <div class="data-value" style="color: #3a71c9;">${cred.credential_value}</div>
+                                <div style="font-size: 10px; color: #94a3b8; margin-top: 4px; font-weight: 500;">
+                                    Issued by: ${cred.issuer_name}
+                                </div>
+                            </div>
+                        `).join("");
+                    } else {
+                        credentialsHTML = `<div class="data-item full-width" style="text-align: center; color: #64748b;">No academic records found in ledger.</div>`;
+                    }
+
+                    // 2. DRAW THE SCREEN
                     resultCard.innerHTML = `
-    <h3 style="color: #059669; display: flex; align-items: center; gap: 8px; margin-bottom: 15px;">
-        <svg width="20" height="20" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
-        Identity & Records Verified
-    </h3>
-    
-    <!-- NEW: Profile Header Section -->
-    <div class="profile-header">
-        <img src="${json.data.profile_pic}" class="profile-img" alt="Student Photo">
-        <div class="profile-title">
-            <h4>${json.data.full_name}</h4>
-            <p>DOB: ${json.data.dob} • ${json.data.category}</p>
-        </div>
-    </div>
-    
-    <!-- UPDATED: Data Grid (Removed Name and DOB since they are in the header) -->
-    <div class="data-grid">
-        <div class="data-item full-width">
-            <div class="data-label">Masked Aadhaar</div>
-            <div class="data-value">${json.data.aadhaar_number}</div>
-        </div>
-        <div class="data-item">
-            <div class="data-label">Board Score (${json.data.board_name})</div>
-            <div class="data-value" style="color: #3a71c9;">${json.data.board_score}%</div>
-        </div>
-        <div class="data-item">
-            <div class="data-label">JEE Advanced Rank</div>
-            <div class="data-value" style="color: #3a71c9;">${json.data.jee_adv_rank}</div>
-        </div>
-        <div class="data-item full-width">
-            <div class="data-label">Parents</div>
-            <div class="data-value" style="font-size: 14px;">${json.data.father_name} & ${json.data.mother_name}</div>
-        </div>
-    </div>
-`;
-                } else {
-                    showToast(json.message);
+                        <h3 style="color: #059669; display: flex; align-items: center; gap: 8px; margin-bottom: 15px;">
+                            <svg width="20" height="20" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
+                            Identity & Records Verified
+                        </h3>
+                        
+                        <div class="profile-header">
+                            <img src="${json.data.profile_pic}" class="profile-img" alt="Student Photo">
+                            <div class="profile-title">
+                                <h4>${json.data.full_name}</h4>
+                                <p>DOB: ${json.data.dob}<br>${json.data.category} Category</p>
+                            </div>
+                        </div>
+                        
+                        <div class="data-grid">
+                            <div class="data-item full-width">
+                                <div class="data-label">Masked Aadhaar</div>
+                                <div class="data-value">${json.data.aadhaar_number}</div>
+                            </div>
+                            
+                            <!-- This automatically pastes however many scores the student has! -->
+                            ${credentialsHTML}
+                        </div>
+                    `;
                 }
             } catch (error) {
                 showToast("Server offline. Is Flask running on port 5000?");
