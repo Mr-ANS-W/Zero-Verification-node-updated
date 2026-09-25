@@ -36,13 +36,28 @@ def officer_verify_pin(pin):
         return flask.jsonify({"success": False, "message": "Invalid or Expired PIN"}), 401
 
     conn = get_db_connection()
+    # 1. Fetch Core Identity
     student = conn.execute('SELECT * FROM students WHERE student_id = ?', (student_id,)).fetchone()
-    conn.close()
-
+    
     if student:
-        del pin_store[pin] # Burn the PIN so it can never be used again
-        return flask.jsonify({"success": True, "data": dict(student)})
+        # 2. Fetch all dynamic credentials for this student
+        ledger_records = conn.execute(
+            'SELECT issuer_name, credential_name, credential_value FROM credentials_ledger WHERE student_id = ?', 
+            (student_id,)
+        ).fetchall()
+        
+        conn.close()
+        
+        # Burn the PIN so it can never be used again
+        del pin_store[pin] 
+        
+        # 3. Stitch them together into one JSON package
+        student_data = dict(student)
+        student_data['credentials'] = [dict(record) for record in ledger_records]
+        
+        return flask.jsonify({"success": True, "data": student_data})
     else:
+        conn.close()
         return flask.jsonify({"success": False, "message": "Database Error"}), 500
 
 # THE MISSING FUNCTION: Tells Flask how to open the vault
@@ -84,23 +99,34 @@ def request_otp(student_id):
 
 @app.route('/api/verify/<student_id>', methods=['GET'])
 def get_student(student_id):
-    # The frontend passes the OTP in the URL (e.g., ?otp=8341)
     user_otp = flask.request.args.get('otp')
     
-    # Check if the OTP is missing or incorrect
     if not user_otp or otp_store.get(student_id) != user_otp:
         return flask.jsonify({"success": False, "message": "Invalid OTP. Consent Denied."}), 401
 
     conn = get_db_connection()
+    # 1. Fetch Core Identity
     student = conn.execute('SELECT * FROM students WHERE student_id = ?', (student_id,)).fetchone()
-    conn.close()
 
     if student:
+        # 2. Fetch all dynamic credentials for this student
+        ledger_records = conn.execute(
+            'SELECT issuer_name, credential_name, credential_value FROM credentials_ledger WHERE student_id = ?', 
+            (student_id,)
+        ).fetchall()
+        
+        conn.close()
+        
         # Clear the OTP so it can't be reused
         del otp_store[student_id]
-        return flask.jsonify({"success": True, "data": dict(student)})
+        
+        # 3. Stitch them together into one JSON package
+        student_data = dict(student)
+        student_data['credentials'] = [dict(record) for record in ledger_records]
+        
+        return flask.jsonify({"success": True, "data": student_data})
     else:
+        conn.close()
         return flask.jsonify({"success": False, "message": "Student ID not found"}), 404
-
 if __name__ == '__main__':
     app.run(host='0.0.0.0', debug=True, port=5000)
