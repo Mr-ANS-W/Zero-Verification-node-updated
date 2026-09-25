@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>APAAR Student Wallet</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        
+        body {
+            background-color: #f1f5f9;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        /* Simulating a Mobile Device Screen */
+        .mobile-frame {
+            width: 100%;
+            max-width: 400px;
+            height: 100vh;
+            max-height: 850px;
+            background: white;
+            position: relative;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        @media (min-width: 450px) {
+            .mobile-frame { height: 90vh; border-radius: 40px; border: 8px solid #0f172a; }
+        }
+
+        /* Top Navigation / Profile */
+        .header {
+            background: #0c3e87;
+            color: white;
+            padding: 40px 25px 25px;
+            border-bottom-left-radius: 25px;
+            border-bottom-right-radius: 25px;
+        }
+
+        .header h1 { font-size: 22px; font-weight: 700; margin-bottom: 5px; }
+        .header p { font-size: 14px; opacity: 0.8; }
+        .badge { background: rgba(255,255,255,0.2); padding: 4px 10px; border-radius: 20px; font-size: 12px; display: inline-block; margin-top: 10px; }
+
+        /* Main Content */
+        .content { padding: 25px; flex-grow: 1; }
+        .section-title { font-size: 14px; color: #64748b; text-transform: uppercase; font-weight: 600; margin-bottom: 15px; letter-spacing: 0.5px; }
+
+        /* Active Connection Card */
+        .card {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            margin-bottom: 25px;
+        }
+
+        .card-header { display: flex; align-items: center; gap: 12px; margin-bottom: 15px; }
+        .icon-box { width: 40px; height: 40px; background: #e0e7ff; color: #3a71c9; border-radius: 10px; display: flex; align-items: center; justify-content: center; }
+        .card-header h3 { font-size: 17px; color: #0f172a; }
+        .card-header p { font-size: 13px; color: #64748b; }
+
+        /* iOS Style Toggles for Selective Disclosure */
+        .data-toggle { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-top: 1px solid #f1f5f9; }
+        .data-toggle:first-of-type { border-top: none; }
+        .toggle-label { font-size: 15px; color: #334155; font-weight: 500; }
+        .toggle-sub { font-size: 12px; color: #94a3b8; display: block; margin-top: 2px; }
+        
+        .switch { position: relative; display: inline-block; width: 44px; height: 24px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #cbd5e1; transition: .3s; border-radius: 34px; }
+        .slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 2px; bottom: 2px; background-color: white; transition: .3s; border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+        input:checked + .slider { background-color: #10b981; }
+        input:checked + .slider:before { transform: translateX(20px); }
+        input:disabled + .slider { opacity: 0.5; cursor: not-allowed; }
+
+        /* Generate Button */
+        button {
+            width: 100%; background: #0c3e87; color: white; border: none; padding: 15px;
+            font-size: 16px; font-weight: 600; border-radius: 12px; cursor: pointer; margin-top: 15px;
+            transition: background 0.3s;
+        }
+        button:active { background: #082f6b; }
+
+        /* Dynamic Token Output */
+        #token_output {
+            display: none; text-align: center; margin-top: 15px; padding-top: 15px; border-top: 1px dashed #cbd5e1; animation: fadeIn 0.4s ease-out;
+        }
+        .pin-display { font-size: 32px; font-weight: 800; color: #0c3e87; letter-spacing: 5px; margin: 10px 0; }
+        .timer { font-size: 13px; color: #ef4444; font-weight: 600; }
+
+        /* Audit Trail */
+        .audit-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #e2e8f0; }
+        .audit-info h4 { font-size: 14px; color: #334155; }
+        .audit-info p { font-size: 12px; color: #94a3b8; }
+        .status-badge { background: #dcfce7; color: #166534; font-size: 11px; font-weight: 600; padding: 4px 8px; border-radius: 6px; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+
+    <div class="mobile-frame">
+        <div class="header">
+            <h1>Student Profile</h1>
+            <p style="margin-bottom: 8px;">Enter ID to link wallet:</p>
+            <input type="text" id="wallet_apaar_id" value="APAAR1001" style="width: 100%; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 10px 15px; border-radius: 8px; font-size: 15px; font-weight: 600; outline: none;" placeholder="e.g., APAAR1001">
+            <div class="badge">Verified Identity Level 3</div>
+        </div>
+
+        <div class="content">
+            <h2 class="section-title">Pending Authorization</h2>
+            
+            <div class="card">
+                <div class="card-header">
+                    <div class="icon-box">
+                        <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
+                    </div>
+                    <div>
+                        <h3>NITK Surathkal</h3>
+                        <p>Admissions Desk Reporting</p>
+                    </div>
+                </div>
+
+                <div class="disclosure-list">
+                    <div class="data-toggle">
+                        <div>
+                            <span class="toggle-label">Core Identity</span>
+                            <span class="toggle-sub">Name, DOB (Mandatory)</span>
+                        </div>
+                        <label class="switch"><input type="checkbox" checked disabled><span class="slider"></span></label>
+                    </div>
+                    <div class="data-toggle">
+                        <div>
+                            <span class="toggle-label">Academic Records</span>
+                            <span class="toggle-sub">Board Score, JEE Adv Rank</span>
+                        </div>
+                        <label class="switch"><input type="checkbox" checked><span class="slider"></span></label>
+                    </div>
+                    <div class="data-toggle">
+                        <div>
+                            <span class="toggle-label">Masked Aadhaar</span>
+                            <span class="toggle-sub">Proof of Citizenship</span>
+                        </div>
+                        <label class="switch"><input type="checkbox"><span class="slider"></span></label>
+                    </div>
+                </div>
+
+                <button id="auth_btn" onclick="generateToken()">Approve & Generate PIN</button>
+
+                <div id="token_output">
+                    <p style="font-size: 13px; color: #64748b;">Provide this PIN to the officer</p>
+                    <div class="pin-display">724901</div>
+                    <div class="timer" id="countdown">Valid for 04:59</div>
+                </div>
+            </div>
+
+            <h2 class="section-title" style="margin-top: 30px;">Access Ledger</h2>
+            
+            <div class="audit-item">
+                <div class="audit-info">
+                    <h4>JoSAA Counseling Board</h4>
+                    <p>Sep 12, 2026 • Ranks & Category</p>
+                </div>
+                <div class="status-badge">Authorized</div>
+            </div>
+            <div class="audit-item">
+                <div class="audit-info">
+                    <h4>ExamGOAL Platform</h4>
+                    <p>May 15, 2026 • Mock Test Data Sync</p>
+                </div>
+                <div class="status-badge" style="background: #fee2e2; color: #991b1b;">Revoked</div>
+            </div>
+        </div>
+    </div>
+
+     <script>
+        async function generateToken() {
+            const btn = document.getElementById('auth_btn');
+            const tokenDiv = document.getElementById('token_output');
+            const pinDisplay = document.querySelector('.pin-display');
+            
+            btn.innerText = "Generating...";
+            btn.disabled = true;
+
+            try {
+                // Fetch the real PIN from your Flask server for APAAR1001
+               // Read the ID from the input box dynamically
+const studentId = document.getElementById('wallet_apaar_id').value;
+
+if (!studentId) {
+    alert("Please enter an APAAR ID to link your wallet.");
+    btn.innerText = "Approve & Generate PIN";
+    btn.disabled = false;
+    return;
+}
+
+// Fetch the real PIN from your Flask server for whichever ID is typed in
+const response = await fetch(`http://127.0.0.1:5000/api/student/generate-pin/${studentId}`);
+                const json = await response.json();
+
+                if (json.success) {
+                    btn.style.display = 'none';
+                    tokenDiv.style.display = 'block';
+                    pinDisplay.innerText = json.pin; // Display the live PIN from the backend
+
+                    // Start the 5-minute countdown
+                    let timeLeft = 299; 
+                    const timerDisplay = document.getElementById('countdown');
+                    setInterval(() => {
+                        const minutes = Math.floor(timeLeft / 60);
+                        let seconds = timeLeft % 60;
+                        if (seconds < 10) seconds = '0' + seconds;
+                        timerDisplay.innerHTML = `Valid for 0${minutes}:${seconds}`;
+                        if (timeLeft > 0) timeLeft--;
+                    }, 1000);
+                } else {
+                    alert("Failed to generate PIN: " + json.message);
+                    btn.innerText = "Approve & Generate PIN";
+                    btn.disabled = false;
+                }
+            } catch (error) {
+                alert("Cannot connect to backend. Is Flask running?");
+                btn.innerText = "Approve & Generate PIN";
+                btn.disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>

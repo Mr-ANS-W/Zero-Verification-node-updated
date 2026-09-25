@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zero-Document Verification Node</title>
+    <style>
+        /* Modern CSS Reset */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        /* Feature 1: Animated Mesh Gradient Background (FIXED SCROLLING) */
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: flex-start; /* Changed from center to allow downward scrolling */
+            padding: 50px 20px; /* Added padding to prevent touching the top */
+            min-height: 100vh;
+            color: #1e293b;
+            position: relative;
+            background: linear-gradient(-45deg, #e2e8f0, #cbd5e1, #f1f5f9, #e0e7ff);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Feature 2: 3D Hover Effect Prep */
+        .perspective-wrapper {
+            perspective: 1000px;
+            width: 100%;
+            max-width: 650px;
+        }
+
+        /* The Frosted Glass Card */
+        .container {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            padding: 45px 50px;
+            border-radius: 20px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15), inset 0 0 0 1px rgba(255,255,255,0.6);
+            width: 100%;
+            position: relative;
+            z-index: 10;
+            transform-style: preserve-3d; 
+            transition: transform 0.1s ease; 
+        }
+
+        /* Title Layout */
+        .title-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 20px;
+            transform: translateZ(30px);
+        }
+
+        .animated-badge {
+            width: 55px;
+            height: 55px;
+            flex-shrink: 0;
+        }
+
+        .title-wrapper h2 {
+            color: #0c3e87; 
+            font-size: 40px;
+            font-weight: 800;
+            letter-spacing: -1px;
+            line-height: 1.05;
+        }
+
+        .drawing-tick {
+            stroke-dasharray: 30; 
+            stroke-dashoffset: 30;
+            animation: draw 2.5s ease-in-out infinite; 
+        }
+
+        @keyframes draw {
+            0% { stroke-dashoffset: 30; }
+            20%, 70% { stroke-dashoffset: 0; }
+            100% { stroke-dashoffset: -30; }
+        }
+
+        .subtitle {
+            color: #333;
+            font-size: 17px;
+            margin-bottom: 35px;
+            line-height: 1.4;
+            max-width: 90%;
+            transform: translateZ(20px);
+        }
+
+        /* Integrated Search Bar */
+        .input-label {
+            display: block;
+            font-size: 15px;
+            color: #111;
+            margin-bottom: 12px;
+            font-weight: 600;
+        }
+
+        .search-bar-wrapper {
+            display: flex;
+            align-items: center;
+            background: white;
+            border: 1px solid #d1d5db;
+            border-radius: 50px;
+            padding: 6px 6px 6px 20px;
+            transition: box-shadow 0.3s, border-color 0.3s;
+            transform: translateZ(25px);
+        }
+
+        .search-bar-wrapper:focus-within {
+            border-color: #4a81d4;
+            box-shadow: 0 0 0 4px rgba(74, 129, 212, 0.15);
+        }
+
+        .search-icon {
+            width: 20px;
+            height: 20px;
+            color: #9ca3af;
+            margin-right: 12px;
+        }
+
+        input {
+            flex-grow: 1;
+            border: none;
+            outline: none;
+            font-size: 16px;
+            color: #333;
+            background: transparent;
+        }
+
+        input::placeholder { color: #9ca3af; }
+
+        /* Button & Loading Spinner */
+        button {
+            background: linear-gradient(180deg, #5b8ee4 0%, #3a71c9 100%);
+            color: white;
+            border: none;
+            padding: 12px 28px;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(58, 113, 201, 0.3);
+            transition: transform 0.1s, background 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            min-width: 140px;
+        }
+
+        button:active { transform: scale(0.97); }
+        button:disabled { cursor: not-allowed; opacity: 0.8; }
+
+        .spinner {
+            display: none;
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Custom Toast Notifications */
+        #toast-container {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .toast {
+            background: white;
+            color: #1e293b;
+            padding: 16px 24px;
+            border-radius: 12px;
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 500;
+            transform: translateX(120%);
+            animation: slideInToast 0.3s forwards, fadeOutToast 0.3s forwards 2.7s;
+            border-left: 4px solid;
+        }
+
+        .toast.error { border-color: #ef4444; }
+        .toast.success { border-color: #10b981; }
+
+        @keyframes slideInToast { to { transform: translateX(0); } }
+        @keyframes fadeOutToast { to { opacity: 0; transform: translateX(120%); } }
+
+        /* Dynamic Sections */
+        #otp_section {
+            display: none;
+            margin-top: 25px;
+            transform: translateZ(20px);
+        }
+
+        .consent-warning {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: #fffbeb;
+            border: 1px solid #fde68a;
+            color: #92400e;
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+
+        #result_card { 
+            display: none; 
+            margin-top: 25px; 
+            padding: 20px; 
+            border-radius: 12px; 
+            border: 1px solid #e2e8f0; 
+            background: #f8fafc;
+            /* max-height: 350px;  */
+            overflow-y: auto; 
+            transform: translateZ(20px);
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .data-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .data-item {
+            background: white;
+            padding: 12px 15px;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .data-label {
+            font-size: 12px;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+        }
+
+        .data-value {
+            font-size: 15px;
+            font-weight: 600;
+            color: #0f172a;
+        }
+        
+        .full-width { grid-column: 1 / -1; }
+        /* Add this inside the <style> tag */
+.profile-header {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+/* .profile-img {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid #e0e7ff;
+    background: #f8fafc;
+} */
+ /* .profile-img {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    object-fit: cover;
+    object-position: 20% 20%; 
+    border: 3px solid #e0e7ff;
+    background: #f8fafc;
+} */
+.profile-img {
+    width: 90px;              /* Width of the photo */
+    height: 120px;            /* Height (taller to match passport proportions) */
+    border-radius: 6px;       /* Just a slight curve on the corners, use 0 for sharp corners */
+    object-fit: cover ;
+    object-position: center 15% ; /* Keeps the focus near the top for the face */
+    border: 1px solid #cbd5e1; /* Subtle grey border like a real printed photo */
+    background: #f8fafc;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1); /* Adds a tiny shadow so it pops off the card */
+}
+
+.profile-title h4 {
+    font-size: 20px;
+    color: #0f172a;
+    margin-bottom: 4px;
+}
+
+.profile-title p {
+    font-size: 13px;
+    color: #64748b;
+    font-weight: 500;
+}
+    </style>
+</head>
+<body>
+
+    <div id="toast-container"></div>
+
+    <div class="perspective-wrapper">
+        <div class="container" id="glass-card">
+            
+            <div class="title-wrapper">
+                <svg class="animated-badge" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" fill="#3a71c9"/>
+                    <path class="drawing-tick" d="M7.5 12L10.5 15L16.5 9" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <h2>Zero-Document <br>Verification Node</h2>
+            </div>
+            
+            <p class="subtitle">Fast, secure, and paperwork-free student ID authentication from the national registry.</p>
+
+            <!-- Verification Mode Toggle -->
+            <div class="mode-toggle" style="display: flex; gap: 10px; margin-bottom: 20px; background: #f1f5f9; padding: 5px; border-radius: 12px;">
+                <button id="tab_otp" onclick="switchMode('otp')" style="flex: 1; padding: 10px; border: none; border-radius: 8px; background: white; box-shadow: 0 2px 4px rgba(0,0,0,0.1); font-weight: 600; color: #0f172a; cursor: pointer; transition: 0.3s;">Remote (OTP)</button>
+                <button id="tab_pin" onclick="switchMode('pin')" style="flex: 1; padding: 10px; border: none; border-radius: 8px; background: transparent; font-weight: 600; color: #64748b; cursor: pointer; transition: 0.3s;">In-Person (PIN)</button>
+            </div>
+
+            <!-- MODE 1: Standard OTP Flow (Legacy) -->
+            <div id="mode_otp">
+                <label class="input-label">Enter Student APAAR ID</label>
+                <div class="search-bar-wrapper">
+                    <svg class="search-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                    <input type="text" id="apaar_input" placeholder="APAAR ID (e.g., APAAR1001)">
+                    <button id="verify_btn_otp" onclick="requestConsent()">
+                        <span id="btn_text_otp">Send OTP</span>
+                        <div class="spinner" id="btn_spinner_otp"></div>
+                    </button>
+                </div>
+                
+                <!-- OTP Input (Hidden initially) -->
+                <div id="otp_section" style="display: none; margin-top: 20px;">
+                    <div class="consent-warning" style="background: #fffbeb; color: #b45309; padding: 12px; border-radius: 8px; margin-bottom: 15px; font-size: 13px; border-left: 4px solid #f59e0b;">
+                        <strong>DPDP Active:</strong> Consent request sent to mobile & email.
+                    </div>
+                    <div class="search-bar-wrapper">
+                        <input type="text" id="otp_input" placeholder="Enter 4-digit OTP" maxlength="4">
+                        <button onclick="verifyOTPAndFetch()" style="background: #10b981;">Confirm</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MODE 2: Student Wallet PIN Flow (Next-Gen) -->
+            <div id="mode_pin" style="display: none;">
+                <label class="input-label">Enter Student Access PIN</label>
+                <div class="search-bar-wrapper">
+                    <svg class="search-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                    <input type="text" id="pin_input" placeholder="6-digit PIN from Student App" maxlength="6">
+                    <button id="verify_btn_pin" onclick="verifyStudentPIN()">
+                        <span id="btn_text_pin">Unlock</span>
+                        <div class="spinner" id="btn_spinner_pin"></div>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Step 3: Result Data -->
+            <div id="result_card"></div>
+        </div>
+    </div>
+
+<script>
+        let currentStudentId = "";
+
+        // Feature: Custom Toast Notifications
+        function showToast(message, type = 'error') {
+            const container = document.getElementById('toast-container');
+            if (!container) return; // Safety check
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            const icon = type === 'error' ? '❌' : '✅';
+            toast.innerHTML = `<span>${icon}</span> <div>${message}</div>`;
+            container.appendChild(toast);
+            
+            setTimeout(() => { toast.remove(); }, 3000);
+        }
+
+        // Feature: 3D Hover Tilt Effect
+        const card = document.getElementById('glass-card');
+        if (card) {
+            card.addEventListener('mousemove', (e) => {
+                const rect = card.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                const centerX = rect.width / 2;
+                const centerY = rect.height / 2;
+                const rotateX = ((y - centerY) / centerY) * -4; 
+                const rotateY = ((x - centerX) / centerX) * 4;
+                card.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+            });
+            card.addEventListener('mouseleave', () => {
+                card.style.transform = `rotateX(0deg) rotateY(0deg)`;
+                card.style.transition = 'transform 0.4s ease'; 
+            });
+            card.addEventListener('mouseenter', () => {
+                card.style.transition = 'none'; 
+            });
+        }
+
+        // 1. Updated OTP Request Function
+        async function requestConsent() {
+            const apaarId = document.getElementById("apaar_input")?.value;
+            if (!apaarId) {
+                showToast("Please enter an APAAR ID.");
+                return;
+            }
+
+            currentStudentId = apaarId; 
+            document.getElementById("otp_input").value = "";
+
+            const btn = document.getElementById("verify_btn_otp");
+            const btnText = document.getElementById("btn_text_otp");
+            const spinner = document.getElementById("btn_spinner_otp");
+            
+            if (btn) btn.disabled = true;
+            if (btnText) btnText.innerText = "Requesting...";
+            if (spinner) spinner.style.display = "block";
+
+            try {
+                const response = await fetch(`http://127.0.0.1:5000/api/request-consent/${apaarId}`);
+                const json = await response.json();
+
+                if (json.success) {
+                    document.getElementById("otp_section").style.display = "block";
+                    showToast("Consent request sent to mobile & email.", "success");
+                } else {
+                    showToast(json.message);
+                }
+            } catch (error) {
+                showToast("Server offline. Is Flask running?");
+            } finally {
+                if (btn) btn.disabled = false;
+                if (btnText) btnText.innerText = "Send OTP";
+                if (spinner) spinner.style.display = "none";
+            }
+        }
+
+        // 2. Updated PIN Verification Function
+        async function verifyStudentPIN() {
+            const pin = document.getElementById("pin_input")?.value;
+            if (!pin || pin.length !== 6) {
+                showToast("Please enter a valid 6-digit PIN.");
+                return;
+            }
+
+            const btn = document.getElementById("verify_btn_pin");
+            const btnText = document.getElementById("btn_text_pin");
+            const spinner = document.getElementById("btn_spinner_pin");
+            const resultCard = document.getElementById("result_card");
+            
+            if (btn) btn.disabled = true;
+            if (btnText) btnText.innerText = "Decrypting...";
+            if (spinner) spinner.style.display = "block";
+
+            await new Promise(resolve => setTimeout(resolve, 800));
+
+            try {
+                const response = await fetch(`http://127.0.0.1:5000/api/officer/verify-pin/${pin}`);
+                const json = await response.json();
+
+                if (json.success) {
+                    document.getElementById("mode_pin").style.display = "none";
+                    document.querySelector(".mode-toggle").style.display = "none";
+                    resultCard.style.display = "block";
+                    showToast("Cryptographic PIN verified", "success");
+
+                    // resultCard.innerHTML = `
+                    //     <h3 style="color: #059669; display: flex; align-items: center; gap: 8px; margin-bottom: 5px;">
+                    //         <svg width="20" height="20" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
+                    //         Identity & Records Verified
+                    //     </h3>
+                    //     <p style="color: #64748b; font-size: 14px; margin-bottom: 15px;">Secure transfer authorized by student token.</p>
+                        
+                    //     <div class="data-grid">
+                    //         <div class="data-item full-width">
+                    //             <div class="data-label">Full Legal Name</div>
+                    //             <div class="data-value">${json.data.full_name}</div>
+                    //         </div>
+                    //         <div class="data-item">
+                    //             <div class="data-label">Date of Birth</div>
+                    //             <div class="data-value">${json.data.dob}</div>
+                    //         </div>
+                    //         <div class="data-item">
+                    //             <div class="data-label">Masked Aadhaar</div>
+                    //             <div class="data-value">${json.data.aadhaar_number}</div>
+                    //         </div>
+                    //         <div class="data-item">
+                    //             <div class="data-label">Board Score (${json.data.board_name})</div>
+                    //             <div class="data-value" style="color: #3a71c9;">${json.data.board_score}%</div>
+                    //         </div>
+                    //         <div class="data-item">
+                    //             <div class="data-label">JEE Advanced Rank</div>
+                    //             <div class="data-value" style="color: #3a71c9;">${json.data.jee_adv_rank}</div>
+                    //         </div>
+                    //     </div>
+                    // `;
+                    resultCard.innerHTML = `
+    <h3 style="color: #059669; display: flex; align-items: center; gap: 8px; margin-bottom: 15px;">
+        <svg width="20" height="20" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
+        Identity & Records Verified
+    </h3>
+    
+    <!-- NEW: Profile Header Section -->
+    <div class="profile-header">
+        <img src="${json.data.profile_pic}" class="profile-img" alt="Student Photo">
+        <div class="profile-title">
+            <h4>${json.data.full_name}</h4>
+            <p>DOB: ${json.data.dob} • ${json.data.category}</p>
+        </div>
+    </div>
+    
+    <!-- UPDATED: Data Grid (Removed Name and DOB since they are in the header) -->
+    <div class="data-grid">
+        <div class="data-item full-width">
+            <div class="data-label">Masked Aadhaar</div>
+            <div class="data-value">${json.data.aadhaar_number}</div>
+        </div>
+        <div class="data-item">
+            <div class="data-label">Board Score (${json.data.board_name})</div>
+            <div class="data-value" style="color: #3a71c9;">${json.data.board_score}%</div>
+        </div>
+        <div class="data-item">
+            <div class="data-label">JEE Advanced Rank</div>
+            <div class="data-value" style="color: #3a71c9;">${json.data.jee_adv_rank}</div>
+        </div>
+        <div class="data-item full-width">
+            <div class="data-label">Parents</div>
+            <div class="data-value" style="font-size: 14px;">${json.data.father_name} & ${json.data.mother_name}</div>
+        </div>
+    </div>
+`;
+                } else {
+                    showToast(json.message);
+                }
+            } catch (error) {
+                showToast("Server offline. Is Flask running?");
+            } finally {
+                if (btn) btn.disabled = false;
+                if (btnText) btnText.innerText = "Unlock";
+                if (spinner) spinner.style.display = "none";
+            }
+        }
+
+        // 3. Updated OTP Verification Function
+        async function verifyOTPAndFetch() {
+            const otp = document.getElementById("otp_input")?.value;
+            const resultCard = document.getElementById("result_card");
+
+            if (!otp) {
+                showToast("Please enter the 4-digit OTP.");
+                return;
+            }
+
+            const btn = document.getElementById("otp_btn");
+            const btnText = document.getElementById("otp_btn_text");
+            const spinner = document.getElementById("otp_btn_spinner");
+            
+            if (btn) btn.disabled = true;
+            if (btnText) btnText.innerText = "Verifying...";
+            if (spinner) spinner.style.display = "block";
+
+            await new Promise(resolve => setTimeout(resolve, 800));
+
+            try {
+                const response = await fetch(`http://127.0.0.1:5000/api/verify/${currentStudentId}?otp=${otp}`);
+                const json = await response.json();
+
+                if (json.success) {
+                    document.getElementById("otp_section").style.display = "none";
+                    resultCard.style.display = "block";
+                    showToast("Cryptographic consent verified", "success");
+
+                    // resultCard.innerHTML = `
+                    //     <h3 style="color: #059669; display: flex; align-items: center; gap: 8px; margin-bottom: 5px;">
+                    //         <svg width="20" height="20" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
+                    //         Identity & Records Verified
+                    //     </h3>
+                    //     <p style="color: #64748b; font-size: 14px; margin-bottom: 15px;">Secure transfer authorized by student.</p>
+                        
+                    //     <div class="data-grid">
+                    //         <div class="data-item full-width">
+                    //             <div class="data-label">Full Legal Name</div>
+                    //             <div class="data-value">${json.data.full_name}</div>
+                    //         </div>
+                    //         <div class="data-item">
+                    //             <div class="data-label">Date of Birth</div>
+                    //             <div class="data-value">${json.data.dob}</div>
+                    //         </div>
+                    //         <div class="data-item">
+                    //             <div class="data-label">Masked Aadhaar</div>
+                    //             <div class="data-value">${json.data.aadhaar_number}</div>
+                    //         </div>
+                    //         <div class="data-item">
+                    //             <div class="data-label">Board Score (${json.data.board_name})</div>
+                    //             <div class="data-value" style="color: #3a71c9;">${json.data.board_score}%</div>
+                    //         </div>
+                    //         <div class="data-item">
+                    //             <div class="data-label">JEE Advanced Rank</div>
+                    //             <div class="data-value" style="color: #3a71c9;">${json.data.jee_adv_rank}</div>
+                    //         </div>
+                    //     </div>
+                    // `;
+                    resultCard.innerHTML = `
+    <h3 style="color: #059669; display: flex; align-items: center; gap: 8px; margin-bottom: 15px;">
+        <svg width="20" height="20" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
+        Identity & Records Verified
+    </h3>
+    
+    <!-- NEW: Profile Header Section -->
+    <div class="profile-header">
+        <img src="${json.data.profile_pic}" class="profile-img" alt="Student Photo">
+        <div class="profile-title">
+            <h4>${json.data.full_name}</h4>
+            <p>DOB: ${json.data.dob} • ${json.data.category}</p>
+        </div>
+    </div>
+    
+    <!-- UPDATED: Data Grid (Removed Name and DOB since they are in the header) -->
+    <div class="data-grid">
+        <div class="data-item full-width">
+            <div class="data-label">Masked Aadhaar</div>
+            <div class="data-value">${json.data.aadhaar_number}</div>
+        </div>
+        <div class="data-item">
+            <div class="data-label">Board Score (${json.data.board_name})</div>
+            <div class="data-value" style="color: #3a71c9;">${json.data.board_score}%</div>
+        </div>
+        <div class="data-item">
+            <div class="data-label">JEE Advanced Rank</div>
+            <div class="data-value" style="color: #3a71c9;">${json.data.jee_adv_rank}</div>
+        </div>
+        <div class="data-item full-width">
+            <div class="data-label">Parents</div>
+            <div class="data-value" style="font-size: 14px;">${json.data.father_name} & ${json.data.mother_name}</div>
+        </div>
+    </div>
+`;
+                } else {
+                    showToast(json.message);
+                }
+            } catch (error) {
+                showToast("Server offline. Is Flask running on port 5000?");
+            } finally {
+                if (btn) btn.disabled = false;
+                if (btnText) btnText.innerText = "Confirm";
+                if (spinner) spinner.style.display = "none";
+            }
+        }
+        
+        // 4. Missing UI Toggle Function
+        function switchMode(mode) {
+            const tabOtp = document.getElementById('tab_otp');
+            const tabPin = document.getElementById('tab_pin');
+            const viewOtp = document.getElementById('mode_otp');
+            const viewPin = document.getElementById('mode_pin');
+
+            if (mode === 'otp') {
+                if (tabOtp) { tabOtp.style.background = 'white'; tabOtp.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)'; tabOtp.style.color = '#0f172a'; }
+                if (tabPin) { tabPin.style.background = 'transparent'; tabPin.style.boxShadow = 'none'; tabPin.style.color = '#64748b'; }
+                if (viewOtp) viewOtp.style.display = 'block';
+                if (viewPin) viewPin.style.display = 'none';
+            } else {
+                if (tabPin) { tabPin.style.background = 'white'; tabPin.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)'; tabPin.style.color = '#0f172a'; }
+                if (tabOtp) { tabOtp.style.background = 'transparent'; tabOtp.style.boxShadow = 'none'; tabOtp.style.color = '#64748b'; }
+                if (viewPin) viewPin.style.display = 'block';
+                if (viewOtp) viewOtp.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>
