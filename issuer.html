@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Authority Issuance Portal</title>
+    <style>
+        /* Reusing your core brand styles */
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        
+        body {
+            display: flex; justify-content: center; align-items: flex-start;
+            padding: 50px 20px; min-height: 100vh; color: #1e293b;
+            background: linear-gradient(-45deg, #e2e8f0, #cbd5e1, #f1f5f9, #e0e7ff);
+            background-size: 400% 400%; animation: gradientBG 15s ease infinite;
+        }
+        @keyframes gradientBG { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+
+        .container {
+            background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            padding: 40px 50px; border-radius: 20px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15), inset 0 0 0 1px rgba(255,255,255,0.6);
+            width: 100%; max-width: 600px;
+        }
+
+        .title-wrapper { display: flex; align-items: center; gap: 15px; margin-bottom: 30px; }
+        .title-wrapper h2 { color: #0f172a; font-size: 32px; font-weight: 800; line-height: 1.1; }
+        
+        .input-group { margin-bottom: 20px; }
+        .input-label { display: block; font-size: 14px; color: #334155; margin-bottom: 8px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;}
+        
+        input, select {
+            width: 100%; background: white; border: 1px solid #cbd5e1; border-radius: 12px;
+            padding: 14px 16px; font-size: 15px; color: #0f172a; outline: none;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+        input:focus, select:focus { border-color: #4a81d4; box-shadow: 0 0 0 4px rgba(74, 129, 212, 0.15); }
+
+        button {
+            width: 100%; background: linear-gradient(180deg, #10b981 0%, #059669 100%);
+            color: white; border: none; padding: 15px; font-size: 16px; font-weight: 600;
+            border-radius: 12px; cursor: pointer; margin-top: 10px;
+            box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3); transition: transform 0.1s;
+        }
+        button:active { transform: scale(0.98); }
+        button:disabled { opacity: 0.7; cursor: not-allowed; }
+
+        /* Custom Toast Notifications */
+        #toast-container { position: fixed; bottom: 30px; right: 30px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
+        .toast { background: white; padding: 16px 24px; border-radius: 12px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); display: flex; align-items: center; gap: 12px; font-weight: 500; animation: slideInToast 0.3s forwards, fadeOutToast 0.3s forwards 2.7s; border-left: 4px solid; }
+        .toast.error { border-color: #ef4444; } .toast.success { border-color: #10b981; }
+        @keyframes slideInToast { from { transform: translateX(120%); } to { transform: translateX(0); } }
+        @keyframes fadeOutToast { to { opacity: 0; transform: translateX(120%); } }
+    </style>
+</head>
+<body>
+
+    <div id="toast-container"></div>
+
+    <div class="container">
+        <div class="title-wrapper">
+            <svg width="45" height="45" fill="none" stroke="#059669" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+            <h2>Authority Ledger <br><span style="color: #64748b; font-size: 20px;">Issuance Portal</span></h2>
+        </div>
+
+        <div class="input-group">
+            <label class="input-label">Select Issuing Authority</label>
+            <select id="issuer_select">
+                <option value="National Testing Agency (NTA)">National Testing Agency (NTA)</option>
+                <option value="CBSE Board">CBSE Board</option>
+                <option value="UPSC">Union Public Service Commission (UPSC)</option>
+                <option value="IIM CAT Committee">IIM CAT Committee</option>
+                <option value="State RTO">State Regional Transport Office (RTO)</option>
+            </select>
+        </div>
+
+        <div class="input-group">
+            <label class="input-label">Student APAAR ID</label>
+            <input type="text" id="student_id_input" placeholder="e.g., APAAR1001">
+        </div>
+
+        <div class="input-group">
+            <label class="input-label">Credential Title</label>
+            <input type="text" id="cred_name_input" placeholder="e.g., UPSC Civil Services Rank">
+        </div>
+
+        <div class="input-group">
+            <label class="input-label">Credential Value</label>
+            <input type="text" id="cred_val_input" placeholder="e.g., AIR 45">
+        </div>
+
+        <button id="publish_btn" onclick="publishCredential()">Sign & Publish to Ledger</button>
+    </div>
+
+    <script>
+        function showToast(message, type = 'error') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.innerHTML = `<span>${type === 'error' ? '❌' : '✅'}</span> <div>${message}</div>`;
+            container.appendChild(toast);
+            setTimeout(() => { toast.remove(); }, 3000);
+        }
+
+        async function publishCredential() {
+            const issuer = document.getElementById("issuer_select").value;
+            const studentId = document.getElementById("student_id_input").value;
+            const credName = document.getElementById("cred_name_input").value;
+            const credVal = document.getElementById("cred_val_input").value;
+
+            if (!studentId || !credName || !credVal) {
+                showToast("Please fill in all fields.");
+                return;
+            }
+
+            const btn = document.getElementById("publish_btn");
+            btn.disabled = true;
+            btn.innerText = "Encrypting & Publishing...";
+
+            const payload = {
+                student_id: studentId,
+                issuer_name: issuer,
+                credential_name: credName,
+                credential_value: credVal
+            };
+
+            try {
+                // Send the POST request to Flask
+                const response = await fetch("http://127.0.0.1:5000/api/issuer/upload", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload)
+                });
+                
+                const json = await response.json();
+
+                if (json.success) {
+                    showToast(json.message, "success");
+                    // Clear the inputs for the next entry
+                    document.getElementById("cred_name_input").value = "";
+                    document.getElementById("cred_val_input").value = "";
+                } else {
+                    showToast(json.message);
+                }
+            } catch (error) {
+                showToast("Server offline. Is Flask running?");
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "Sign & Publish to Ledger";
+            }
+        }
+    </script>
+</body>
+</html>
